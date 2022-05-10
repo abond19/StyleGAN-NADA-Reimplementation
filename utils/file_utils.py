@@ -3,6 +3,8 @@ import shutil
 
 import torch
 from torchvision import utils
+import torch.nn as nn
+import torch.nn.functional as F
 
 import cv2
 
@@ -19,25 +21,28 @@ def save_images(images, output_dir, prefix, nrows, i):
 
 def save_paper_image_grid(sampled_images, sample_dir, i):
     file_name=str(i)+'samples.png'
-    img = (sampled_images + 1.0) * 126 
+    img = (sampled_images + 1.0) * 126
 
     half_size = img.size()[-1] // 2
     quarter_size = half_size // 2
 
     base_fig = torch.cat([img[0], img[1]], dim=2)
-    sub_cols=torch.Tensor([])
+    sub_cols = []
     for i in range(2, 8, 2):
-      for j in range(2):
-        resized_img=torch.nn.functional.interpolate(img[i + j].unsqueeze(0), (half_size, half_size))[0]
-        sub_cols=torch.cat(resized_img,dim=1)
+        resized_img = F.interpolate(img[i].unsqueeze(0), (half_size, half_size))[0]
+        resized_img1 = F.interpolate(img[i + 1].unsqueeze(0), (half_size, half_size))[0]
+
+        sub_cols.append(torch.cat((resized_img, resized_img1), dim=1))
 
     base_fig = torch.cat([base_fig, *sub_cols], dim=2)
 
-    sub_cols=torch.Tensor([])
+    sub_cols = []
     for i in range(8, 16, 4):
-      for j in range(4):
-        resized_img=torch.nn.functional.interpolate(img[i + j].unsqueeze(0), (quarter_size, quarter_size))[0]
-        sub_cols=torch.cat(resized_img,dim=1)
+        resized_img = F.interpolate(img[i].unsqueeze(0), (quarter_size, quarter_size))[0]
+        resized_img1 = F.interpolate(img[i + 1].unsqueeze(0), (quarter_size, quarter_size))[0]
+        resized_img2 = F.interpolate(img[i + 2].unsqueeze(0), (quarter_size, quarter_size))[0]
+        resized_img3 = F.interpolate(img[i + 3].unsqueeze(0), (quarter_size, quarter_size))[0]
+        sub_cols.append(torch.cat((resized_img, resized_img1, resized_img2, resized_img3), dim=1))
 
     base_fig = torch.cat([base_fig, *sub_cols], dim=2)
 
