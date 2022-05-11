@@ -1,12 +1,13 @@
 import torch
 import random
 
+
 def make_noise(batch, latent_dim, n_noise, device):
     if n_noise == 1:
         return torch.randn(batch, latent_dim, device=device)
 
     noises = torch.randn(n_noise, batch, latent_dim, device=device)
-    noises=(noises[0],noises[1])
+    noises = (noises[0], noises[1])
 
     return noises
 

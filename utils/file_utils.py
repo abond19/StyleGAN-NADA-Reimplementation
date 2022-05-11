@@ -3,7 +3,6 @@ import shutil
 
 import torch
 from torchvision import utils
-import torch.nn as nn
 import torch.nn.functional as F
 
 import cv2
