@@ -240,7 +240,7 @@ class StyleGANNada(nn.Module):
             
             frozen_img = self.frozen_generator(w_styles, input_is_latent=True, truncation=truncation, randomize_noise=randomize_noise)[0]
 
-        trainable_img = self.frozen_generator(w_styles, input_is_latent=True, truncation=truncation, randomize_noise=randomize_noise)[0]
+        trainable_img = self.trainable_generator(w_styles, input_is_latent=True, truncation=truncation, randomize_noise=randomize_noise)[0]
         
         clip_loss = torch.sum(torch.stack([self.clip_model_weights[model_name] * self.clip_loss_models[model_name](frozen_img, self.source_class, trainable_img, self.target_class) for model_name in self.clip_model_weights.keys()]))
 
