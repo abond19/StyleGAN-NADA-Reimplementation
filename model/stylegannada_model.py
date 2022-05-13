@@ -23,14 +23,16 @@ class NADAGenerator(nn.Module):
         self.image_size = image_size
         self.channel_multiplier = channel_multiplier
         
-        self.generator = Generator(image_size, style_dims, layers, channel_multiplier)
+        self.generator = Generator(image_size, style_dims, layers, channel_multiplier).to(device)
         
-        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt")
+        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt", map_location=device)
         
         self.generator.load_state_dict(checkpoint_file["g_ema"], strict=False)
+        with torch.no_grad():
+            self.mean_latent = self.generator.mean_latent(4096)
         
     def forward(self, styles, return_latents=False, inject_index=None, truncation=1, truncation_latent=None, input_is_latent=False, input_is_s_code=False, noise=None, randomize_noise=True):
-        return self.generator(styles, return_latents=return_latents, inject_index=inject_index, truncation=truncation, truncation_latent=truncation_latent, input_is_latent=input_is_latent, input_is_s_code=input_is_s_code, noise=noise, randomize_noise=randomize_noise)
+        return self.generator(styles, return_latents=return_latents, inject_index=inject_index, truncation=truncation, truncation_latent=self.mean_latent, input_is_latent=input_is_latent, input_is_s_code=input_is_s_code, noise=noise, randomize_noise=randomize_noise)
     
     def get_training_layers(self, phase):
 
@@ -87,9 +89,9 @@ class NADADiscriminator(nn.Module):
         self.image_size = image_size
         self.channel_multiplier = channel_multiplier
         
-        self.discriminator = Discriminator(image_size, channel_multiplier)
+        self.discriminator = Discriminator(image_size, channel_multiplier).to(device)
         
-        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt")
+        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt", map_location=device)
         
         self.discriminator.load_state_dict(checkpoint_file["d"], strict=False)
     
@@ -208,4 +210,39 @@ class StyleGANNada(nn.Module):
         
         return chosen_layers
     
+    def forward(
+        self,
+        styles,
+        return_latents=False,
+        inject_index=None,
+        truncation=1,
+        truncation_latent=None,
+        input_is_latent=False,
+        noise=None,
+        randomize_noise=True,
+    ):
+
+        if self.training and self.auto_layer_iters > 0:
+            self.trainable_generator.unfreeze_layers()
+            train_layers = self.determine_opt_layers()
+
+            if not isinstance(train_layers, list):
+                train_layers = [train_layers]
+
+            self.trainable_generator.freeze_layers()
+            self.trainable_generator.unfreeze_layers(train_layers)
+
+        with torch.no_grad():
+            if input_is_latent:
+                w_styles = styles
+            else:
+                w_styles = self.frozen_generator.style(styles)
+            
+            frozen_img = self.frozen_generator(w_styles, input_is_latent=True, truncation=truncation, randomize_noise=randomize_noise)[0]
+
+        trainable_img = self.frozen_generator(w_styles, input_is_latent=True, truncation=truncation, randomize_noise=randomize_noise)[0]
+        
+        clip_loss = torch.sum(torch.stack([self.clip_model_weights[model_name] * self.clip_loss_models[model_name](frozen_img, self.source_class, trainable_img, self.target_class) for model_name in self.clip_model_weights.keys()]))
+
+        return [frozen_img, trainable_img], clip_loss
     

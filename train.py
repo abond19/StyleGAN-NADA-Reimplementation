@@ -21,7 +21,7 @@ def train(args, sample_dir, ckpt_dir, logger):
 
     g_reg_ratio = args.g_reg_every / (args.g_reg_every + 1)
 
-    optimizer = torch.optim.Adam(net.generator_trainable.parameters(), lr=args.lr * g_reg_ratio,
+    optimizer = torch.optim.Adam(net.trainable_generator.parameters(), lr=args.lr * g_reg_ratio,
                                  betas=(0 ** g_reg_ratio, 0.99 ** g_reg_ratio))
 
     noise = torch.randn(args.n_sample, 512, device=device)
@@ -55,7 +55,7 @@ def train(args, sample_dir, ckpt_dir, logger):
             file_name = 'ckpt' + '_' + str(i).zfill(7) + '.pt'
             torch.save({
                 'epoch': i,
-                'model_state_dict': net.generator_trainable.generator.state_dict(),
+                'model_state_dict': net.trainable_generator.generator.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
             }, os.path.join(ckpt_dir, file_name))
