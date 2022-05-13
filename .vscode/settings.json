@@ -1,0 +1,13 @@
+{
+    "python.pythonPath": "/kuacc/users/yakarken18/.conda/envs/stylegan-nada/bin/python",
+    "editor.minimap.enabled": false,
+    "editor.selectionClipboard": false,
+    "window.zoomLevel": 0,
+    "terminal.integrated.rendererType": "dom",
+    "python.linting.pylintUseMinimalCheckers": false,
+    "python.linting.pylintArgs": [
+        "--errors-only",
+        "--generated-members=numpy.* ,torch.* ,cv2.* , cv.*"
+    ],
+
+}

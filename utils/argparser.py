@@ -129,7 +129,7 @@ parser.add_argument(
 parser.add_argument(
     "--num_grid_outputs",
     type=int,
-    default=0,
+    default=1,
     help="Number of paper-style grid images to generate after training."
 )
 
