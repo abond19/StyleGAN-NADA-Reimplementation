@@ -1,4 +1,8 @@
-from stylegan2_model import Generator, Discriminator
+
+import sys
+import os
+from .stylegan2_model  import Generator, Discriminator
+from .criteria.clip_loss  import  CLIPLoss
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,7 +16,7 @@ def requires_grad(layers, flag=True):
 
 class NADAGenerator(nn.Module):
     
-    def __init__(self, checkpoint_path="stylegan2-ffhq-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
+    def __init__(self, checkpoint_path="/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
         super(NADAGenerator, self).__init__()
         self.latent_size = style_dims
         self.layers = layers
@@ -21,7 +25,7 @@ class NADAGenerator(nn.Module):
         
         self.generator = Generator(image_size, style_dims, layers, channel_multiplier)
         
-        checkpoint_file = torch.load("stylegan2-ffhq-config-f.pt")
+        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt")
         
         self.generator.load_state_dict(checkpoint_file["g_ema"], strict=False)
         
@@ -52,7 +56,7 @@ class NADAGenerator(nn.Module):
         if layer_list == None:
             self.freeze_layers(self.get_all_layers())
         else:
-            for layer in layers:
+            for layer in layer_list:
                 requires_grad(layer, False)
     
     def unfreeze_layers(self, layer_list=None):
@@ -76,7 +80,7 @@ class NADAGenerator(nn.Module):
 
 class NADADiscriminator(nn.Module):
     
-    def __init__(self, checkpoint_path="stylegan2-ffhq-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
+    def __init__(self, checkpoint_path="/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
         super(NADADiscriminator, self).__init__()
         self.latent_size = style_dims
         self.layers = layers
@@ -85,7 +89,7 @@ class NADADiscriminator(nn.Module):
         
         self.discriminator = Discriminator(image_size, channel_multiplier)
         
-        checkpoint_file = torch.load("stylegan2-ffhq-config-f.pt")
+        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-ffhq-config-f.pt")
         
         self.discriminator.load_state_dict(checkpoint_file["d"], strict=False)
     
@@ -102,7 +106,7 @@ class NADADiscriminator(nn.Module):
         if layer_list == None:
             self.freeze_layers(self.get_all_layers())
         else:
-            for layer in layers:
+            for layer in layer_list:
                 requires_grad(layer, False)
     
     def unfreeze_layers(self, layer_list=None):
@@ -119,14 +123,14 @@ class StyleGANNada(nn.Module):
         
         self.args = args
         
-        self.device = "cuda:0"
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         
         # Need both generators for the training loss
-        self.frozen_generator = NADAGenerator(args.frozen_gen_ckpt, img_size=args.size, channel_multiplier=args.channel_multiplier).to(self.device)
+        self.frozen_generator = NADAGenerator(args.frozen_gen_ckpt, image_size=args.size, channel_multiplier=args.channel_multiplier).to(self.device)
         self.frozen_generator.freeze_layers()
         self.frozen_generator.eval()
         
-        self.trainable_generator = NADAGenerator(args.train_gen_ckpt, img_size=args.size, channel_multiplier=args.channel_multiplier).to(self.device)
+        self.trainable_generator = NADAGenerator(args.train_gen_ckpt, image_size=args.size, channel_multiplier=args.channel_multiplier).to(self.device)
         self.trainable_generator.freeze_layers()
         self.trainable_generator.unfreeze_layers(self.trainable_generator.get_training_layers(args.phase))
         self.trainable_generator.train()
@@ -168,7 +172,7 @@ class StyleGANNada(nn.Module):
     def determine_optimal_layers(self):
         random_value = torch.randn(self.args.auto_layer_batch, 512, device=self.device)
         
-        initial_w = self.frozen_generator.style([sample_z])
+        initial_w = self.frozen_generator.style([random_value])
         initial_w = initial_w[0].unsqueeze(1).repeat(1, self.frozen_generator.generator.n_latent, 1)
         
         w = torch.Tensor(initial_w.cpu().detach().numpy()).to(self.device)
@@ -189,7 +193,7 @@ class StyleGANNada(nn.Module):
             w_loss.backward()
             w_optim.step()
             
-        layer_weights = torch.abs(w_codes - initial_w_codes).mean(dim=-1).mean(dim=0)
+        layer_weights = torch.abs(w - initial_w).mean(dim=-1).mean(dim=0)
         chosen_layers = torch.topk(layer_weights, self.auto_layer_k)[1].cpu().numpy()
         
         all_layers = list(self.trainable_generator.get_all_layers())

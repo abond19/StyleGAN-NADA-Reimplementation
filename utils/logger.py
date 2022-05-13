@@ -3,7 +3,7 @@ import logging
 
 
 def log():
-    log_file = os.path.join('../output_dir', 'it-loss.log')
+    log_file = os.path.join('/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation', 'it-loss.log')
 
     if not os.path.isfile(log_file):
         open(log_file, "w+").close()

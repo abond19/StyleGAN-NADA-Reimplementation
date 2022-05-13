@@ -29,6 +29,33 @@ parser.add_argument(
     default=1.0,
     help="Strength of directional clip loss",
 )
+parser.add_argument(
+            "--lambda_patch",
+            type=float,
+            default=0.0,
+            help="Strength of patch-based clip loss",
+        )
+
+parser.add_argument(
+            "--lambda_global",
+            type=float,
+            default=0.0,
+            help="Strength of global clip loss",
+        )
+
+parser.add_argument(
+            "--lambda_texture",
+            type=float,
+            default=0.0,
+            help="Strength of texture preserving loss",
+        )
+
+parser.add_argument(
+            "--lambda_manifold",
+            type=float,
+            default=0.0,
+            help="Strength of manifold constraint term"
+        )
 
 parser.add_argument(
     "--save_interval",
@@ -52,6 +79,10 @@ parser.add_argument(
     "--target_class",
     default="cat",
 )
+parser.add_argument(
+            "--phase",
+            help="Training phase flag"
+        )
 
 parser.add_argument(
     "--sample_truncation",
@@ -237,6 +268,8 @@ def parse(arg_parser):
             if not (image.endswith(".png") or image.endswith(".jpg") or image.endswith(".jpeg")):
                 filelist.remove(image)
 
-        args.style_img_list = filelist
+        args.target_img_list = filelist
+    else:
+        args.target_img_list = None
 
     return args, sample_dir, ckpt_dir

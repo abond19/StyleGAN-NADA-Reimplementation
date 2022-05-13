@@ -1,16 +1,23 @@
 import os
+import sys
 import torch
 import shutil
 
-from model.ZSSGAN import ZSSGAN
+from model.stylegannada_model import StyleGANNada
 from utils.file_utils import copytree, save_images, save_paper_image_grid
 from utils.training_utils import mixing_noise
 from utils.logger import log
 from utils.argparser import parser, parse
 
 
+
+"""if './hotel' not in sys.path:
+    sys.path.insert(0, './hotel')
+from hotel import *"""
+
+
 def train(args, sample_dir, ckpt_dir, logger):
-    net = ZSSGAN(args)
+    net = StyleGANNada(args)
 
     g_reg_ratio = args.g_reg_every / (args.g_reg_every + 1)
 
@@ -25,6 +32,7 @@ def train(args, sample_dir, ckpt_dir, logger):
 
         [sampled_src, sampled_dst], loss = net(samples)
         logger.info("iteration: {} loss: {:.6f}".format(i, loss))
+        print(i, "th iteration ", loss)
 
         net.zero_grad()
         loss.backward()
@@ -64,6 +72,7 @@ def train(args, sample_dir, ckpt_dir, logger):
 
 
 if __name__ == "__main__":
+    print(__package__)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     args, sample_dir, ckpt_dir = parse(parser)
@@ -76,7 +85,7 @@ if __name__ == "__main__":
     if not os.path.exists(criteria):
         os.makedirs(criteria)
 
-    copytree("criteria/", criteria)
-    shutil.copy2("model/ZSSGAN.py", os.path.join(args.output_dir, "code", "ZSSGAN.py"))
+    #copytree("model/criteria/", criteria)
+    #shutil.copy2("model/Stylegannada_model.py", os.path.join(args.output_dir, "code", "Stylegannada_model.py"))
 
     train(args, sample_dir, ckpt_dir, logger)
