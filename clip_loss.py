@@ -3,12 +3,12 @@ import torchvision.transforms as transforms
 import torch.nn.functional as F
 
 import numpy as np
-
+import sys
+import os
 import math
 import clip
 from PIL import Image
-
-from ZSSGAN.utils.text_templates import imagenet_templates, part_templates, imagenet_templates_small
+from .text_templates import imagenet_templates, part_templates, imagenet_templates_small
 
 class DirectionLoss(torch.nn.Module):
 
