@@ -219,6 +219,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+            "--crop_for_cars", 
+            action="store_true", 
+            help="Crop images to LSUN car aspect ratio."
+        )
+
+
+parser.add_argument(
     "--augment", action="store_true", help="apply non leaking augmentation"
 )
 

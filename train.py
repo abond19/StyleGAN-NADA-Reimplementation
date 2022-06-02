@@ -4,7 +4,7 @@ import torch
 import shutil
 
 from model.stylegannada_model import StyleGANNada
-from utils.file_utils import copytree, save_images, save_paper_image_grid
+from utils.file_utils import save_images, save_paper_image_grid
 from utils.training_utils import mixing_noise
 from utils.logger import log
 from utils.argparser import parser, parse
@@ -32,7 +32,7 @@ def train(args, sample_dir, ckpt_dir, logger):
 
         [sampled_src, sampled_dst], loss = net(samples)
         logger.info("iteration: {} loss: {:.6f}".format(i, loss))
-        print(i, "th iteration ", loss)
+        
 
         net.zero_grad()
         loss.backward()
@@ -45,9 +45,10 @@ def train(args, sample_dir, ckpt_dir, logger):
             with torch.no_grad():
                 [sampled_src, sampled_dst], loss = net([noise], truncation=args.sample_truncation)
 
-                # TODO:car cropping
+                if args.crop_for_cars:
+                    sampled_dst = sampled_dst[:, :, 64:448, :]
 
-                grid_rows = int(args.n_sample ** 0.5)
+                grid_rows = 4
 
                 save_images(sampled_dst, sample_dir, "dst", grid_rows, i)
 
@@ -66,26 +67,15 @@ def train(args, sample_dir, ckpt_dir, logger):
             gen_sample = mixing_noise(16, 512, 0, device)
             [sampled_src, sampled_dst], loss = net(gen_sample, truncation=args.sample_truncation)
 
-        # TODO: crop for cars
+        if args.crop_for_cars:
+                    sampled_dst = sampled_dst[:, :, 64:448, :]
 
         save_paper_image_grid(sampled_dst, sample_dir, i)
 
 
 if __name__ == "__main__":
-    print(__package__)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     args, sample_dir, ckpt_dir = parse(parser)
     logger = log()
-    code_dir = os.path.join(args.output_dir, "code")
-    if not os.path.exists(code_dir):
-        os.makedirs(code_dir)
-
-    criteria = os.path.join(args.output_dir, "code", "criteria")
-    if not os.path.exists(criteria):
-        os.makedirs(criteria)
-
-    #copytree("model/criteria/", criteria)
-    #shutil.copy2("model/Stylegannada_model.py", os.path.join(args.output_dir, "code", "Stylegannada_model.py"))
-
     train(args, sample_dir, ckpt_dir, logger)

@@ -54,12 +54,3 @@ def save_torch_img(img, output_dir, file_name):
     img = img[:, :, ::-1]
     cv2.imwrite(os.path.join(output_dir, file_name), img)
 
-def copytree(src, dst):
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        if os.path.isdir(s):
-            copytree(s, os.path.join(dst, item))
-        else:
-            d=os.path.join(dst, item)
-            if not os.path.exists(d):
-                shutil.copy2(s, d)
