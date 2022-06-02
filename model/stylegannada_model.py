@@ -16,7 +16,7 @@ def requires_grad(layers, flag=True):
 
 class NADAGenerator(nn.Module):
     
-    def __init__(self, checkpoint_path="/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-horse-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
+    def __init__(self, checkpoint_path="StyleGAN-NADA-Reimplementation/model/stylegan2-horse-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
         super(NADAGenerator, self).__init__()
         self.latent_size = style_dims
         self.layers = layers
@@ -25,7 +25,7 @@ class NADAGenerator(nn.Module):
         
         self.generator = Generator(image_size, style_dims, layers, channel_multiplier).to(device)
         
-        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-horse-config-f.pt", map_location=device)
+        checkpoint_file = torch.load(checkpoint_path, map_location=device)
         
         self.generator.load_state_dict(checkpoint_file["g_ema"], strict=False)
         with torch.no_grad():
@@ -82,7 +82,7 @@ class NADAGenerator(nn.Module):
 
 class NADADiscriminator(nn.Module):
     
-    def __init__(self, checkpoint_path="/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-horse-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
+    def __init__(self, checkpoint_path="StyleGAN-NADA-Reimplementation/model/stylegan2-horse-config-f.pt", style_dims=512, layers=8, image_size=1024, channel_multiplier=2, device="cuda:0"):
         super(NADADiscriminator, self).__init__()
         self.latent_size = style_dims
         self.layers = layers
@@ -91,7 +91,7 @@ class NADADiscriminator(nn.Module):
         
         self.discriminator = Discriminator(image_size, channel_multiplier).to(device)
         
-        checkpoint_file = torch.load("/kuacc/users/yakarken18/StyleGAN-NADA-Reimplementation/model/stylegan2-horse-config-f.pt", map_location=device)
+        checkpoint_file = torch.load(checkpoint_path, map_location=device)
         
         self.discriminator.load_state_dict(checkpoint_file["d"], strict=False)
     
